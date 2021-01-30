@@ -1,0 +1,18 @@
+[package]
+name = "system_info_service"
+version = "0.1.0"
+authors = ["rpg2014 <rpg2014@users.noreply.github.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+rocket = "0.4.6"
+serde = {version = "1.0.123", features = ["derive"]}
+systemstat = "0.1.6"
+hhmmss = "0.1.0"
+
+[dependencies.rocket_contrib]
+version = "0.4.6"
+default-features = false
+features = ["json"]
