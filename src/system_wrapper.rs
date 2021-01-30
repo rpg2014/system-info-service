@@ -3,12 +3,12 @@ extern crate systemstat;
 
 // pub mod system_wrapper {
 use rocket::response::status;
-use rocket::response::status::NotFound;
+use rocket::response::status::{BadRequest, NotFound};
 use rocket_contrib::json::Json;
 use serde::{Deserialize, Serialize};
-pub use std::net::{Ipv4Addr, Ipv6Addr};
+use std::net::{Ipv4Addr, Ipv6Addr};
 use std::time::Duration;
-use systemstat::{NetworkAddrs, Platform, System};
+use systemstat::{saturating_sub_bytes, NetworkAddrs, Platform, System};
 
 pub fn get_uptime() -> Result<Duration, NotFound<Json<String>>> {
     let sys = System::new();
@@ -87,16 +87,124 @@ pub fn get_networks() -> Result<NetworkResult, NotFound<Json<String>>> {
     }
 
     Ok(NetworkResult { networks: result })
-    // for netif in networks.values()
-    //         Ok(netifs) => {
-    //             println!("\nNetworks:");
-    //             for netif in netifs.values() {
-    //                 println!("{} ({:?})", netif.name, netif.addrs);
-    //             }
-    //         }
-    //         Err(x) => println!("\nNetworks: error: {}", x)
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct NetworkStats {
+    pub rx_bytes: u64,
+    pub tx_bytes: u64,
+    pub rx_packets: u64,
+    pub tx_packets: u64,
+    pub rx_errors: u64,
+    pub tx_errors: u64,
+}
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum NetworkStatsResults {
+    One(NetworkStats),
+    List(Vec<NetworkStats>),
+}
+pub fn get_networks_stats() -> Result<Vec<NetworkStats>, NotFound<Json<String>>> {
+    let sys = System::new();
+
+    let netifs = sys
+        .networks()
+        .or_else(|e| Err(status::NotFound(Json(e.to_string()))))?;
+    let mut result = Vec::new();
+    for netif in netifs.values() {
+        let net_stats = sys
+            .network_stats(&netif.name)
+            .or_else(|e| Err(status::NotFound(Json(e.to_string()))))?;
+        result.push(NetworkStats {
+            rx_bytes: net_stats.rx_bytes.as_u64(),
+            tx_bytes: net_stats.tx_bytes.as_u64(),
+            rx_packets: net_stats.rx_packets,
+            tx_packets: net_stats.tx_packets,
+            rx_errors: net_stats.rx_errors,
+            tx_errors: net_stats.tx_errors,
+        })
+    }
+    Ok(result)
+}
+pub fn get_network_stats(name: String) -> Result<NetworkStats, NotFound<Json<String>>> {
+    let sys = System::new();
+    let net_stats = sys
+        .network_stats(&name)
+        .or_else(|e| Err(status::NotFound(Json(e.to_string()))))?;
+
+    Ok(NetworkStats {
+        rx_bytes: net_stats.rx_bytes.as_u64(),
+        tx_bytes: net_stats.tx_bytes.as_u64(),
+        rx_packets: net_stats.rx_packets,
+        tx_packets: net_stats.tx_packets,
+        rx_errors: net_stats.rx_errors,
+        tx_errors: net_stats.tx_errors,
+    })
+}
+
+pub fn get_cpu_temp() -> Result<f32, BadRequest<Json<String>>> {
+    let sys = System::new();
+    match sys.cpu_temp() {
+        Ok(cpu_temp) => Ok(cpu_temp),
+        Err(x) => Err(BadRequest(Some(Json(x.to_string())))),
+    }
+}
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Memory {
+    pub total: u64,
+    pub free: u64,
+    pub used: u64,
+}
+pub fn get_memory() -> Result<Memory, BadRequest<Json<String>>> {
+    let sys = System::new();
+    match sys.memory() {
+        Ok(mem) => Ok(Memory {
+            used: saturating_sub_bytes(mem.total, mem.free).as_u64(),
+            total: mem.total.as_u64(),
+            free: mem.free.as_u64(),
+        }),
+        Err(x) => Err(BadRequest(Some(Json(x.to_string())))),
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Filesystem {
+    pub files: usize,
+    pub files_total: usize,
+    pub files_avail: usize,
+    pub free: u64,
+    pub avail: u64,
+    pub total: u64,
+    pub name_max: usize,
+    pub fs_type: String,
+    pub fs_mounted_from: String,
+    pub fs_mounted_on: String,
+}
+
+pub fn get_drives() -> Result<Vec<Filesystem>, BadRequest<Json<String>>> {
+    let sys = System::new();
+
+    match sys.mounts() {
+        Ok(mounts) => {
+            let mut result = Vec::new();
+            for mount in mounts.iter() {
+                result.push(Filesystem {
+                    fs_mounted_from: mount.fs_mounted_from.clone(),
+                    fs_type: mount.fs_type.clone(),
+                    fs_mounted_on: mount.fs_mounted_on.clone(),
+                    free: mount.free.as_u64(),
+                    avail: mount.avail.as_u64(),
+                    total: mount.total.as_u64(),
+                    name_max: mount.name_max,
+                    files: mount.files,
+                    files_total: mount.files_total,
+                    files_avail: mount.files_avail,
+                })
+            }
+            Ok(result)
+        }
+        Err(x) => Err(BadRequest(Some(Json(x.to_string())))),
+    }
+}
 //     match sys.mounts() {
 //     Ok(mounts) => {
 //         println!("\nMounts:");
@@ -106,26 +214,6 @@ pub fn get_networks() -> Result<NetworkResult, NotFound<Json<String>>> {
 //         }
 //     }
 //     Err(x) => println!("\nMounts: error: {}", x)
-// }
-
-// match sys.networks() {
-//     Ok(netifs) => {
-//         println!("\nNetworks:");
-//         for netif in netifs.values() {
-//             println!("{} ({:?})", netif.name, netif.addrs);
-//         }
-//     }
-//     Err(x) => println!("\nNetworks: error: {}", x)
-// }
-
-// match sys.networks() {
-//     Ok(netifs) => {
-//         println!("\nNetwork interface statistics:");
-//         for netif in netifs.values() {
-//             println!("{} statistics: ({:?})", netif.name, sys.network_stats(&netif.name));
-//         }
-//     }
-//     Err(x) => println!("\nNetworks: error: {}", x)
 // }
 
 // match sys.battery_life() {
@@ -147,11 +235,6 @@ pub fn get_networks() -> Result<NetworkResult, NotFound<Json<String>>> {
 //     Err(x) => println!("\nMemory: error: {}", x)
 // }
 
-// match sys.load_average() {
-//     Ok(loadavg) => println!("\nLoad average: {} {} {}", loadavg.one, loadavg.five, loadavg.fifteen),
-//     Err(x) => println!("\nLoad average: error: {}", x)
-// }
-
 // match sys.boot_time() {
 //     Ok(boot_time) => println!("\nBoot time: {}", boot_time),
 //     Err(x) => println!("\nBoot time: error: {}", x)
@@ -166,11 +249,6 @@ pub fn get_networks() -> Result<NetworkResult, NotFound<Json<String>>> {
 //             cpu.user * 100.0, cpu.nice * 100.0, cpu.system * 100.0, cpu.interrupt * 100.0, cpu.idle * 100.0);
 //     },
 //     Err(x) => println!("\nCPU load: error: {}", x)
-// }
-
-// match sys.cpu_temp() {
-//     Ok(cpu_temp) => println!("\nCPU temp: {}", cpu_temp),
-//     Err(x) => println!("\nCPU temp: {}", x)
 // }
 
 // match sys.socket_stats() {

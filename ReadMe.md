@@ -9,3 +9,9 @@ I'm exposing the commented out functions in system_wrapper at the moment.  I wil
  https://rocket.rs/  
  https://github.com/myfreeweb/systemstat/blob/master/src/data.rs  
  https://github.com/myfreeweb/systemstat  
+
+
+ ## current (1-30-21) next steps
+ * Build out the rest of the API
+ * Install on all of the Pi's
+ * Write frontend using react chart or graph or something.  
