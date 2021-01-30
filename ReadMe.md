@@ -6,6 +6,6 @@ This will eventually be used to create a dashboard for my raspberry pi's
 I'm exposing the commented out functions in system_wrapper at the moment.  I will need to build the frontend later.
 
 ## Libraries being used / relevent links
- https://rocket.rs/
- https://github.com/myfreeweb/systemstat/blob/master/src/data.rs
- https://github.com/myfreeweb/systemstat
+ https://rocket.rs/  
+ https://github.com/myfreeweb/systemstat/blob/master/src/data.rs  
+ https://github.com/myfreeweb/systemstat  
