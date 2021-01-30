@@ -1,14 +1,11 @@
-extern crate rocket;
-extern crate systemstat;
 
-// pub mod system_wrapper {
 use rocket::response::status;
 use rocket::response::status::{BadRequest, NotFound};
 use rocket_contrib::json::Json;
-use serde::{Deserialize, Serialize};
-use std::net::{Ipv4Addr, Ipv6Addr};
+
 use std::time::Duration;
 use systemstat::{saturating_sub_bytes, NetworkAddrs, Platform, System};
+use crate::system_wrapper::types::*;
 
 pub fn get_uptime() -> Result<Duration, NotFound<Json<String>>> {
     let sys = System::new();
@@ -16,12 +13,7 @@ pub fn get_uptime() -> Result<Duration, NotFound<Json<String>>> {
         .or_else(|e| Err(status::NotFound(Json(e.to_string()))))
 }
 
-#[derive(Serialize, Deserialize)]
-pub struct LoadAverageCopy {
-    pub one: f32,
-    pub five: f32,
-    pub fifteen: f32,
-}
+
 
 pub fn get_load_average() -> Result<LoadAverageCopy, NotFound<Json<String>>> {
     let sys = System::new();
@@ -33,28 +25,6 @@ pub fn get_load_average() -> Result<LoadAverageCopy, NotFound<Json<String>>> {
         five: load.five,
         fifteen: load.fifteen,
     })
-}
-#[derive(Serialize)]
-pub struct NetworkResult {
-    networks: Vec<NetworkDetails>,
-}
-
-#[derive(Debug, Clone, PartialEq, Serialize)]
-pub enum IpAddr {
-    Empty,
-    Unsupported,
-    V4(Ipv4Addr),
-    V6(Ipv6Addr),
-}
-#[derive(Debug, Clone, Serialize)]
-pub struct NetworkAddrsDetails {
-    pub addr: IpAddr,
-}
-
-#[derive(Debug, Clone, Serialize)]
-pub struct NetworkDetails {
-    pub name: String,
-    pub addrs: Vec<NetworkAddrsDetails>,
 }
 
 fn get_network_addrs(addrs: &Vec<NetworkAddrs>) -> Vec<NetworkAddrsDetails> {
@@ -89,20 +59,7 @@ pub fn get_networks() -> Result<NetworkResult, NotFound<Json<String>>> {
     Ok(NetworkResult { networks: result })
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct NetworkStats {
-    pub rx_bytes: u64,
-    pub tx_bytes: u64,
-    pub rx_packets: u64,
-    pub tx_packets: u64,
-    pub rx_errors: u64,
-    pub tx_errors: u64,
-}
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub enum NetworkStatsResults {
-    One(NetworkStats),
-    List(Vec<NetworkStats>),
-}
+
 pub fn get_networks_stats() -> Result<Vec<NetworkStats>, NotFound<Json<String>>> {
     let sys = System::new();
 
@@ -148,12 +105,7 @@ pub fn get_cpu_temp() -> Result<f32, BadRequest<Json<String>>> {
         Err(x) => Err(BadRequest(Some(Json(x.to_string())))),
     }
 }
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Memory {
-    pub total: u64,
-    pub free: u64,
-    pub used: u64,
-}
+
 pub fn get_memory() -> Result<Memory, BadRequest<Json<String>>> {
     let sys = System::new();
     match sys.memory() {
@@ -166,19 +118,6 @@ pub fn get_memory() -> Result<Memory, BadRequest<Json<String>>> {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Filesystem {
-    pub files: usize,
-    pub files_total: usize,
-    pub files_avail: usize,
-    pub free: u64,
-    pub avail: u64,
-    pub total: u64,
-    pub name_max: usize,
-    pub fs_type: String,
-    pub fs_mounted_from: String,
-    pub fs_mounted_on: String,
-}
 
 pub fn get_drives() -> Result<Vec<Filesystem>, BadRequest<Json<String>>> {
     let sys = System::new();

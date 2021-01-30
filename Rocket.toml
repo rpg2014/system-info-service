@@ -1,0 +1,7 @@
+[development]
+address = "localhost"
+port = 8000
+
+[production]
+port = 8000
+log = "critical"

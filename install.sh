@@ -14,4 +14,7 @@ git clone https://github.com/rpg2014/system-info-service.git
 
 cd system-info-service
 
+#need to build the secret key before building, and add to Rocket.toml
+echo "secret_key = \"$(openssl rand -base64 32)\"" >> Rocket.toml
+
 cargo build --release
