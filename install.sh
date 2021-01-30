@@ -18,3 +18,10 @@ cd system-info-service
 echo "secret_key = \"$(openssl rand -base64 32)\"" >> Rocket.toml
 
 cargo build --release
+
+cargo install --path .
+
+sudo cp system-info.service /etc/systemd/system
+sudo systemctl daemon-reload
+sudo systemctl status system-info.service
+sudo systemctl enable system-info.service

@@ -10,8 +10,10 @@ I'm exposing the commented out functions in system_wrapper at the moment.  I wil
  https://github.com/myfreeweb/systemstat/blob/master/src/data.rs  
  https://github.com/myfreeweb/systemstat  
 
+Can use for frontend
+https://github.com/plouc/nivo
 
  ## current (1-30-21) next steps
- * Build out the rest of the API
+* ~~Build out the rest of the API~~
  * Install on all of the Pi's
  * Write frontend using react chart or graph or something.  

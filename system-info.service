@@ -1,0 +1,12 @@
+[Unit]
+Description=System Info service
+After=network.target
+StartLimitIntervalSec=0[Service]
+Type=simple
+Restart=always
+RestartSec=1
+User=pi
+ExecStart=/home/pi/.cargo/bin/system_info_service
+
+[Install]
+WantedBy=multi-user.target
