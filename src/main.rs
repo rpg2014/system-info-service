@@ -17,6 +17,7 @@ struct Opts {
 
 fn main() {
     let opts: Opts = Opts::parse();
+
     let mut allowed_origins = AllowedOrigins::some_regex(&["^https://dash.parkergiven.com"]);
     let mut send_wildcard = false;
     if opts.debug {
