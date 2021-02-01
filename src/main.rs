@@ -17,7 +17,7 @@ struct Opts {
 
 fn main() {
     let opts: Opts = Opts::parse();
-    let mut allowed_origins = AllowedOrigins::some_regex(&["^http://192.168.0.[0-9]{3}:*"]);
+    let mut allowed_origins = AllowedOrigins::some_regex(&["^https://dash.parkergiven.com"]);
     let mut send_wildcard = false;
     if opts.debug {
         allowed_origins = AllowedOrigins::all();
@@ -53,7 +53,8 @@ fn main() {
                 system_wrapper::handlers::net_stats_handler,
                 system_wrapper::handlers::cpu_temp_handler,
                 system_wrapper::handlers::memory_handler,
-                system_wrapper::handlers::disk_handler
+                system_wrapper::handlers::disk_handler,
+                system_wrapper::handlers::hostname_handler
             ],
         )
         .attach(cors)

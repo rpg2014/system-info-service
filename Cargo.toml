@@ -13,6 +13,7 @@ systemstat = "0.1.6"
 hhmmss = "0.1.0"
 rocket_cors = "0.5.1"
 clap = "3.0.0-beta.2"
+hostname = "0.3.1"
 
 [dependencies.rocket_contrib]
 version = "0.4.6"

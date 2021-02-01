@@ -2,7 +2,7 @@ use hhmmss::Hhmmss;
 use rocket::response::status::{BadRequest, NotFound};
 use rocket_contrib::json::Json;
 use crate::system_wrapper::types::{Filesystem, Memory, NetworkStatsResults, LoadAverageCopy, NetworkResult};
-use crate::system_wrapper::internal::{get_uptime, get_load_average, get_cpu_temp, get_drives, get_memory, get_network_stats, get_networks, get_networks_stats};
+use crate::system_wrapper::internal::{get_uptime, get_load_average, get_cpu_temp, get_drives, get_memory, get_network_stats, get_networks, get_networks_stats, get_hostname};
 
 
 #[get("/uptime")]
@@ -41,6 +41,10 @@ pub fn cpu_temp_handler() -> Result<Json<f32>, BadRequest<Json<String>>> {
 #[get("/memory")]
 pub fn memory_handler() -> Result<Json<Memory>, BadRequest<Json<String>>> {
     Ok(Json(get_memory()?))
+}
+#[get("/hostname")]
+pub fn hostname_handler() -> Result<Json<String>, BadRequest<Json<String>>> {
+    Ok(Json(get_hostname()?))
 }
 
 #[get("/disk_info")]

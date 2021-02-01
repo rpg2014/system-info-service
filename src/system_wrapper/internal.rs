@@ -144,17 +144,18 @@ pub fn get_drives() -> Result<Vec<Filesystem>, BadRequest<Json<String>>> {
         Err(x) => Err(BadRequest(Some(Json(x.to_string())))),
     }
 }
-//     match sys.mounts() {
-//     Ok(mounts) => {
-//         println!("\nMounts:");
-//         for mount in mounts.iter() {
-//             println!("{} ---{}---> {} (available {} of {})",
-//                      mount.fs_mounted_from, mount.fs_type, mount.fs_mounted_on, mount.avail, mount.total);
-//         }
-//     }
-//     Err(x) => println!("\nMounts: error: {}", x)
-// }
+pub fn get_hostname() -> Result<String, BadRequest<Json<String>>> {
+    let os_string = match hostname::get() {
+        Ok(name) => Ok(name),
+        Err(e) =>Err(BadRequest(Some(Json(e.to_string())))),
+    }? ;
 
+    match os_string.into_string() {
+        Ok(name) => Ok(name),
+        Err(_e) =>Err(BadRequest(Some(Json("Unable to get hostname".to_string())))),
+    }
+
+}
 // match sys.battery_life() {
 //     Ok(battery) =>
 //         print!("\nBattery: {}%, {}h{}m remaining",
