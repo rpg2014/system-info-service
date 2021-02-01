@@ -18,8 +18,10 @@ struct Opts {
 fn main() {
     let opts: Opts = Opts::parse();
     let mut allowed_origins = AllowedOrigins::some_regex(&["^http://192.168.0.[0-9]{3}:*"]);
+    let mut send_wildcard = false;
     if opts.debug {
         allowed_origins = AllowedOrigins::all();
+        send_wildcard = true;
     }
     // let allowed_origins = AllowedOrigins::all();//
     
@@ -30,8 +32,7 @@ fn main() {
         allowed_methods: vec![Method::Get].into_iter().map(From::from).collect(),
         // allowed_headers: AllowedHeaders::some(&["Authorization", "Accept"]),
         // allow_credentials: true,
-        send_wildcard: true,
-        fairing_route_base: "/".to_string(),
+        send_wildcard,
         ..Default::default()
     }
     .to_cors();
