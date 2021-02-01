@@ -21,7 +21,10 @@ cargo build --release
 
 cargo install --path .
 
+sudo cp Rocket.toml /
+
 sudo cp system-info.service /etc/systemd/system
 sudo systemctl daemon-reload
 sudo systemctl status system-info.service
 sudo systemctl enable system-info.service
+sudo systemctl start system-info.service
