@@ -6,13 +6,14 @@ use crate::system_wrapper::types::{
     CPULoad, Filesystem, LoadAverageCopy, Memory, NetworkResult, NetworkStatsResults,
 };
 use hhmmss::Hhmmss;
+use std::time::Duration;
 use rocket::response::status::{BadRequest, NotFound};
 use rocket_contrib::json::Json;
 use std::io;
 
 #[get("/uptime")]
-pub fn uptime_handler() -> Result<Json<String>, NotFound<Json<String>>> {
-    Ok(Json(get_uptime()?.hhmmss()))
+pub fn uptime_handler() -> Result<Json<Duration>, NotFound<Json<String>>> {
+    Ok(Json(get_uptime()?))
 }
 
 #[get("/load_average")]
