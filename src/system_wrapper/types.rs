@@ -8,7 +8,6 @@ pub struct LoadAverageCopy {
     pub fifteen: f32,
 }
 
-
 #[derive(Serialize)]
 pub struct NetworkResult {
     pub networks: Vec<NetworkDetails>,
@@ -66,4 +65,12 @@ pub struct Filesystem {
     pub fs_type: String,
     pub fs_mounted_from: String,
     pub fs_mounted_on: String,
+}
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CPULoad {
+    pub user: f32,
+    pub nice: f32,
+    pub system: f32,
+    pub interrupt: f32,
+    pub idle: f32,
 }

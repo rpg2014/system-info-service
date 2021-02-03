@@ -3,9 +3,9 @@
 #[macro_use]
 extern crate rocket;
 extern crate rocket_cors;
-use rocket_cors::{AllowedOrigins};
-use rocket::http::Method;
 use clap::Clap;
+use rocket::http::Method;
+use rocket_cors::AllowedOrigins;
 mod system_wrapper;
 
 #[derive(Clap)]
@@ -13,7 +13,6 @@ struct Opts {
     #[clap(short)]
     debug: bool,
 }
-
 
 fn main() {
     let opts: Opts = Opts::parse();
@@ -25,7 +24,6 @@ fn main() {
         send_wildcard = true;
     }
     // let allowed_origins = AllowedOrigins::all();//
-    
 
     // You can also deserialize this
     let cors_result = rocket_cors::CorsOptions {
@@ -38,11 +36,10 @@ fn main() {
     }
     .to_cors();
 
-    let cors = match cors_result{
+    let cors = match cors_result {
         Ok(cors) => cors,
-        Err(e) => panic!("Cors is fucc: {}", e)
+        Err(e) => panic!("Cors is fucc: {}", e),
     };
-
 
     rocket::ignite()
         .mount(
@@ -55,7 +52,8 @@ fn main() {
                 system_wrapper::handlers::cpu_temp_handler,
                 system_wrapper::handlers::memory_handler,
                 system_wrapper::handlers::disk_handler,
-                system_wrapper::handlers::hostname_handler
+                system_wrapper::handlers::hostname_handler,
+                system_wrapper::handlers::cpu_average
             ],
         )
         .attach(cors)

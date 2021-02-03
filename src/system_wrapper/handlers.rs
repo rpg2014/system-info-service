@@ -1,9 +1,14 @@
+use crate::system_wrapper::internal::{
+    get_cpu_average, get_cpu_temp, get_drives, get_hostname, get_load_average, get_memory,
+    get_network_stats, get_networks, get_networks_stats, get_uptime,
+};
+use crate::system_wrapper::types::{
+    CPULoad, Filesystem, LoadAverageCopy, Memory, NetworkResult, NetworkStatsResults,
+};
 use hhmmss::Hhmmss;
 use rocket::response::status::{BadRequest, NotFound};
 use rocket_contrib::json::Json;
-use crate::system_wrapper::types::{Filesystem, Memory, NetworkStatsResults, LoadAverageCopy, NetworkResult};
-use crate::system_wrapper::internal::{get_uptime, get_load_average, get_cpu_temp, get_drives, get_memory, get_network_stats, get_networks, get_networks_stats, get_hostname};
-
+use std::io;
 
 #[get("/uptime")]
 pub fn uptime_handler() -> Result<Json<String>, NotFound<Json<String>>> {
@@ -24,12 +29,8 @@ pub fn net_stats_handler(
     name: Option<String>,
 ) -> Result<Json<NetworkStatsResults>, NotFound<Json<String>>> {
     match name {
-        Some(name) => Ok(Json(NetworkStatsResults::One(
-            get_network_stats(name)?,
-        ))),
-        None => Ok(Json(NetworkStatsResults::List(
-            get_networks_stats()?,
-        ))),
+        Some(name) => Ok(Json(NetworkStatsResults::One(get_network_stats(name)?))),
+        None => Ok(Json(NetworkStatsResults::List(get_networks_stats()?))),
     }
 }
 
@@ -50,4 +51,9 @@ pub fn hostname_handler() -> Result<Json<String>, BadRequest<Json<String>>> {
 #[get("/disk_info")]
 pub fn disk_handler() -> Result<Json<Vec<Filesystem>>, BadRequest<Json<String>>> {
     Ok(Json(get_drives()?))
+}
+
+#[get("/cpu_average")]
+pub fn cpu_average() -> Result<Json<CPULoad>, io::Error> {
+    Ok(Json(get_cpu_average()?))
 }

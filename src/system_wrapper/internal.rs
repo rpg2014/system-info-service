@@ -1,19 +1,17 @@
-
+use crate::system_wrapper::types::*;
 use rocket::response::status;
 use rocket::response::status::{BadRequest, NotFound};
 use rocket_contrib::json::Json;
-
+use std::io;
+use std::thread::sleep;
 use std::time::Duration;
 use systemstat::{saturating_sub_bytes, NetworkAddrs, Platform, System};
-use crate::system_wrapper::types::*;
 
 pub fn get_uptime() -> Result<Duration, NotFound<Json<String>>> {
     let sys = System::new();
     sys.uptime()
         .or_else(|e| Err(status::NotFound(Json(e.to_string()))))
 }
-
-
 
 pub fn get_load_average() -> Result<LoadAverageCopy, NotFound<Json<String>>> {
     let sys = System::new();
@@ -58,7 +56,6 @@ pub fn get_networks() -> Result<NetworkResult, NotFound<Json<String>>> {
 
     Ok(NetworkResult { networks: result })
 }
-
 
 pub fn get_networks_stats() -> Result<Vec<NetworkStats>, NotFound<Json<String>>> {
     let sys = System::new();
@@ -118,7 +115,6 @@ pub fn get_memory() -> Result<Memory, BadRequest<Json<String>>> {
     }
 }
 
-
 pub fn get_drives() -> Result<Vec<Filesystem>, BadRequest<Json<String>>> {
     let sys = System::new();
 
@@ -147,14 +143,37 @@ pub fn get_drives() -> Result<Vec<Filesystem>, BadRequest<Json<String>>> {
 pub fn get_hostname() -> Result<String, BadRequest<Json<String>>> {
     let os_string = match hostname::get() {
         Ok(name) => Ok(name),
-        Err(e) =>Err(BadRequest(Some(Json(e.to_string())))),
-    }? ;
+        Err(e) => Err(BadRequest(Some(Json(e.to_string())))),
+    }?;
 
     match os_string.into_string() {
         Ok(name) => Ok(name),
-        Err(_e) =>Err(BadRequest(Some(Json("Unable to get hostname".to_string())))),
+        Err(_e) => Err(BadRequest(Some(Json("Unable to get hostname".to_string())))),
     }
+}
 
+pub fn get_cpu_average() -> Result<CPULoad, io::Error> {
+    let sys = System::new();
+    let future = sys.cpu_load_aggregate()?;
+    sleep(Duration::from_secs(1));
+    let cpu = future.done()?;
+    return Ok(CPULoad {
+        user: cpu.user,
+        nice: cpu.nice,
+        system: cpu.system,
+        interrupt: cpu.interrupt,
+        idle: cpu.idle,
+    });
+
+    //     Ok(cpu)=> {
+    //         println!("\nMeasuring CPU load...");
+    //         thread::sleep(Duration::from_secs(1));
+    //         let cpu = cpu.done().unwrap();
+    //         println!("CPU load: {}% user, {}% nice, {}% system, {}% intr, {}% idle ",
+    //             cpu.user * 100.0, cpu.nice * 100.0, cpu.system * 100.0, cpu.interrupt * 100.0, cpu.idle * 100.0);
+    //     },
+    //     Err(x) => println!("\nCPU load: error: {}", x)
+    // }
 }
 // match sys.battery_life() {
 //     Ok(battery) =>
