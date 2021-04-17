@@ -33,6 +33,7 @@ pub struct NetworkDetails {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct NetworkStats {
+    pub network_name: String,
     pub rx_bytes: u64,
     pub tx_bytes: u64,
     pub rx_packets: u64,
