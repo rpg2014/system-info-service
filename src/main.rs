@@ -11,12 +11,13 @@ mod system_wrapper;
 
 #[derive(Parser, Debug)]
 // #[command(author, version, about, long_about = None)]
-struct Opts {
-    debug: bool,
+struct Args {
+    #[arg(short)]
+    debug: bool
 }
 
 fn main() {
-    let opts: Opts = Opts::parse();
+    let opts: Args = Args::parse();
 
     let mut allowed_origins = AllowedOrigins::some_regex(&["^http://fleet.parkergiven.com"]);
     let mut send_wildcard = false;
