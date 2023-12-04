@@ -3,21 +3,22 @@
 #[macro_use]
 extern crate rocket;
 extern crate rocket_cors;
-use clap::Clap;
+use clap::Parser;
 use rocket::http::Method;
 use rocket_cors::AllowedOrigins;
 mod system_wrapper;
 
-#[derive(Clap)]
+
+#[derive(Parser, Debug)]
+// #[command(author, version, about, long_about = None)]
 struct Opts {
-    #[clap(short)]
     debug: bool,
 }
 
 fn main() {
     let opts: Opts = Opts::parse();
 
-    let mut allowed_origins = AllowedOrigins::some_regex(&["^https://dash.parkergiven.com"]);
+    let mut allowed_origins = AllowedOrigins::some_regex(&["^http://fleet.parkergiven.com"]);
     let mut send_wildcard = false;
     if opts.debug {
         allowed_origins = AllowedOrigins::all();

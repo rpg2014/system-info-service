@@ -69,7 +69,7 @@ pub fn get_networks_stats() -> Result<Vec<NetworkStats>, NotFound<Json<String>>>
             .network_stats(&netif.name)
             .or_else(|e| Err(status::NotFound(Json(e.to_string()))))?;
         result.push(NetworkStats {
-            network_name: netif.name.clone(),
+            network_name: netif.name.to_string(),
             rx_bytes: net_stats.rx_bytes.as_u64(),
             tx_bytes: net_stats.tx_bytes.as_u64(),
             rx_packets: net_stats.rx_packets,
