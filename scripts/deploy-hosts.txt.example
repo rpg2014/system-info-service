@@ -1,0 +1,13 @@
+# System Info Service Deployment Hosts
+# Format: user@hostname or user@ip.address
+# 
+# Copy this file to 'deploy-hosts.txt' and add your target hosts
+# Example: cp scripts/deploy-hosts.txt.example scripts/deploy-hosts.txt
+#
+# Then edit deploy-hosts.txt with your actual hosts
+
+# Example hosts (uncomment and modify):
+# pi@192.168.1.100
+# pi@192.168.1.101
+# pi@raspberrypi-livingroom.local
+# pi@raspberrypi-bedroom.local

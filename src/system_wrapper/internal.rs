@@ -1,7 +1,7 @@
 use crate::system_wrapper::types::*;
 use rocket::response::status;
 use rocket::response::status::{BadRequest, NotFound};
-use rocket_contrib::json::Json;
+use rocket::serde::json::Json;
 use std::io;
 use std::thread::sleep;
 use std::time::Duration;
@@ -101,7 +101,7 @@ pub fn get_cpu_temp() -> Result<f32, BadRequest<Json<String>>> {
     let sys = System::new();
     match sys.cpu_temp() {
         Ok(cpu_temp) => Ok(cpu_temp),
-        Err(x) => Err(BadRequest(Some(Json(x.to_string())))),
+        Err(x) => Err(BadRequest(Json(x.to_string()))),
     }
 }
 
@@ -113,7 +113,7 @@ pub fn get_memory() -> Result<Memory, BadRequest<Json<String>>> {
             total: mem.total.as_u64(),
             free: mem.free.as_u64(),
         }),
-        Err(x) => Err(BadRequest(Some(Json(x.to_string())))),
+        Err(x) => Err(BadRequest(Json(x.to_string()))),
     }
 }
 
@@ -139,18 +139,18 @@ pub fn get_drives() -> Result<Vec<Filesystem>, BadRequest<Json<String>>> {
             }
             Ok(result)
         }
-        Err(x) => Err(BadRequest(Some(Json(x.to_string())))),
+        Err(x) => Err(BadRequest(Json(x.to_string()))),
     }
 }
 pub fn get_hostname() -> Result<String, BadRequest<Json<String>>> {
     let os_string = match hostname::get() {
         Ok(name) => Ok(name),
-        Err(e) => Err(BadRequest(Some(Json(e.to_string())))),
+        Err(e) => Err(BadRequest(Json(e.to_string()))),
     }?;
 
     match os_string.into_string() {
         Ok(name) => Ok(name),
-        Err(_e) => Err(BadRequest(Some(Json("Unable to get hostname".to_string())))),
+        Err(_e) => Err(BadRequest(Json("Unable to get hostname".to_string()))),
     }
 }
 

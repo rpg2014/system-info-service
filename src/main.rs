@@ -16,7 +16,8 @@ struct Args {
     debug: bool
 }
 
-fn main() {
+#[rocket::main]
+async fn main() {
     let opts: Args = Args::parse();
 
     let mut allowed_origins = AllowedOrigins::some_regex(&["^http://fleet.parkergiven.com"]);
@@ -43,9 +44,15 @@ fn main() {
         Err(e) => panic!("Cors is fucc: {}", e),
     };
 
-    rocket::ignite()
+    let _ = rocket::build()
         .mount(
-            "/system",
+            "/api",
+            routes![
+                system_wrapper::handlers::health_check_handler,
+            ],
+        )
+        .mount(
+            "/api/system",
             routes![
                 system_wrapper::handlers::uptime_handler,
                 system_wrapper::handlers::load_average_handler,
@@ -55,9 +62,11 @@ fn main() {
                 system_wrapper::handlers::memory_handler,
                 system_wrapper::handlers::disk_handler,
                 system_wrapper::handlers::hostname_handler,
-                system_wrapper::handlers::cpu_average
+                system_wrapper::handlers::cpu_average,
+                system_wrapper::handlers::system_all_handler,
             ],
         )
         .attach(cors)
-        .launch();
+        .launch()
+        .await;
 }

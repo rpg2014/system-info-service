@@ -1,14 +1,14 @@
 use serde::{Deserialize, Serialize};
 use std::net::{Ipv4Addr, Ipv6Addr};
 
-#[derive(Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LoadAverageCopy {
     pub one: f32,
     pub five: f32,
     pub fifteen: f32,
 }
 
-#[derive(Serialize)]
+#[derive(Debug, Clone, Serialize)]
 pub struct NetworkResult {
     pub networks: Vec<NetworkDetails>,
 }
@@ -74,4 +74,30 @@ pub struct CPULoad {
     pub system: f32,
     pub interrupt: f32,
     pub idle: f32,
+}
+
+// Phase 1: Health Check Response
+#[derive(Debug, Clone, Serialize)]
+pub struct HealthCheckResponse {
+    pub status: String,
+    pub timestamp: String,
+    pub uptime: Option<String>,
+    pub hostname: Option<String>,
+}
+
+// Phase 1: Batch Endpoint Response
+#[derive(Debug, Clone, Serialize)]
+pub struct SystemAllResponse {
+    pub timestamp: String,
+    pub hostname: String,
+    pub uptime: String,
+    #[serde(rename = "cpuTemp")]
+    pub cpu_temp: Option<f32>,
+    #[serde(rename = "loadAverage")]
+    pub load_average: Option<LoadAverageCopy>,
+    pub networks: Option<NetworkResult>,
+    #[serde(rename = "netStats")]
+    pub net_stats: Option<NetworkStatsResults>,
+    #[serde(rename = "cpuAverage")]
+    pub cpu_average: Option<CPULoad>,
 }

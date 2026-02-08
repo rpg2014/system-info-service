@@ -1,21 +1,17 @@
 [package]
 name = "system_info_service"
-version = "0.1.2"
+version = "0.2.0"
 authors = ["rpg2014 <rpg2014@users.noreply.github.com>"]
 edition = "2018"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-rocket = "0.4.10"
+rocket = { version = "0.5.1", features = ["json"] }
 serde = {version = "1.0.193", features = ["derive"]}
 systemstat = "0.1.6"
 hhmmss = "0.1.0"
-rocket_cors = "0.5.1"
+rocket_cors = "0.6.0"
 clap = { version = "4.4.6", features = ["derive"] }
 hostname = "0.3.1"
-
-[dependencies.rocket_contrib]
-version = "0.4.10"
-default-features = false
-features = ["json"]
+chrono = "0.4"
