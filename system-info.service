@@ -7,8 +7,8 @@ StartLimitIntervalSec=0
 Type=simple
 Restart=always
 RestartSec=1
-User=pi
+Environment="ROCKET_PROFILE=production"
 ExecStart=/home/pi/.cargo/bin/system_info_service
 
 [Install]
-WantedBy=multi-user.target
+WantedBy=default.target

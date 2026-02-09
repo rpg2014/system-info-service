@@ -95,7 +95,7 @@ pub fn system_all_handler() -> Result<Json<crate::system_wrapper::types::SystemA
     let load_average = get_load_average().ok();
     let networks = get_networks().ok();
     let net_stats = get_networks_stats().ok().map(NetworkStatsResults::List);
-    let cpu_average = get_cpu_average().ok();
+    // let cpu_average = get_cpu_average().ok();
     
     Ok(Json(crate::system_wrapper::types::SystemAllResponse {
         timestamp,
@@ -105,6 +105,6 @@ pub fn system_all_handler() -> Result<Json<crate::system_wrapper::types::SystemA
         load_average,
         networks,
         net_stats,
-        cpu_average,
+        // cpu_average,
     }))
 }

@@ -1,4 +1,4 @@
-#![feature(proc_macro_hygiene, decl_macro)]
+// #![feature(proc_macro_hygiene, decl_macro)]
 
 #[macro_use]
 extern crate rocket;
@@ -46,13 +46,13 @@ async fn main() {
 
     let _ = rocket::build()
         .mount(
-            "/api",
+            "/",
             routes![
                 system_wrapper::handlers::health_check_handler,
             ],
         )
         .mount(
-            "/api/system",
+            "/system",
             routes![
                 system_wrapper::handlers::uptime_handler,
                 system_wrapper::handlers::load_average_handler,

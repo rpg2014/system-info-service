@@ -46,6 +46,10 @@ while [[ $# -gt 0 ]]; do
             echo "Example hosts file:"
             echo "  pi@192.168.1.100"
             echo "  pi@raspberrypi.local"
+            echo ""
+            echo "NOTE: This script uses systemd user services and assumes lingering"
+            echo "      is already enabled on target hosts."
+            echo "      To enable lingering: sudo loginctl enable-linger \$USER"
             exit 0
             ;;
         *)
@@ -102,6 +106,23 @@ is_first_install() {
     fi
 }
 
+# Function to check if lingering is enabled
+check_lingering() {
+    local host=$1
+    
+    log_info "[$host] Checking if lingering is enabled..."
+    
+    if ssh "$host" "loginctl show-user \$USER | grep -q 'Linger=yes'"; then
+        log_success "[$host] Lingering is enabled"
+        return 0
+    else
+        log_warning "[$host] Lingering is NOT enabled"
+        log_warning "[$host] User services will stop when you log out"
+        log_info "[$host] To enable lingering, run on the host: sudo loginctl enable-linger \$USER"
+        return 1
+    fi
+}
+
 # Function to ensure dependencies are installed
 ensure_dependencies() {
     local host=$1
@@ -110,14 +131,15 @@ ensure_dependencies() {
     
     # Check for git
     if ! ssh "$host" "command -v git &> /dev/null"; then
-        log_info "[$host] Installing git..."
-        ssh "$host" "sudo apt update && sudo apt install git -y"
+        log_error "[$host] Git is not installed. Please install it first:"
+        log_error "[$host] sudo apt update && sudo apt install git -y"
+        return 1
     fi
     
     # Check for cargo/rust
     if ! ssh "$host" "command -v cargo &> /dev/null"; then
         log_info "[$host] Installing Rust..."
-        ssh "$host" "curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- --default-toolchain nightly --profile minimal -y"
+        ssh "$host" "curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- --default-toolchain stable --profile minimal -y"
         ssh "$host" "source \$HOME/.cargo/env"
     fi
     
@@ -166,84 +188,108 @@ setup_rocket_config() {
     local host=$1
     local user=$(echo $host | cut -d'@' -f1)
     local remote_dir="/home/$user/system-info-service"
+    local config_dir="/home/$user/.config/system-info-service"
+    local config_file="$config_dir/Rocket.toml"
     
     log_info "[$host] Setting up Rocket configuration..."
     
-    # Check if secret_key already exists in Rocket.toml
-    if ssh "$host" "grep -q 'secret_key' $remote_dir/Rocket.toml" 2>/dev/null; then
+    # Create config directory if it doesn't exist
+    ssh "$host" "mkdir -p $config_dir"
+    
+    # Copy Rocket.toml from repo to config directory if it doesn't exist
+    if ! ssh "$host" "[ -f $config_file ]" 2>/dev/null; then
+        log_info "[$host] Copying Rocket.toml template to config directory..."
+        ssh "$host" "cp $remote_dir/Rocket.toml $config_file"
+    fi
+    
+    # Check if secret_key already exists in config Rocket.toml
+    if ssh "$host" "grep -q 'secret_key' $config_file" 2>/dev/null; then
         log_info "[$host] Rocket.toml already has secret_key"
     else
         log_info "[$host] Generating secret key for Rocket.toml..."
-        ssh "$host" "cd $remote_dir && echo 'secret_key = \"'\$(openssl rand -base64 32)'\"' >> Rocket.toml"
+        ssh "$host" "echo 'secret_key = \"'\$(openssl rand -base64 32)'\"' >> $config_file"
     fi
     
-    # Copy Rocket.toml to root if needed
-    ssh "$host" "sudo cp $remote_dir/Rocket.toml / 2>/dev/null || true"
+    log_success "[$host] Rocket config at: $config_file"
 }
 
-# Function to build the project
+# Function to build and install the project
 build_project() {
     local host=$1
     local user=$(echo $host | cut -d'@' -f1)
     local remote_dir="/home/$user/system-info-service"
     
-    log_info "[$host] Building project (this may take a few minutes)..."
+    log_info "[$host] Building and installing project (this may take a few minutes)..."
     
-    # Build in release mode
-    if ssh "$host" "cd $remote_dir && source \$HOME/.cargo/env && cargo build --release"; then
-        log_success "[$host] Build completed successfully"
+    # Install the binary (this builds in release mode and installs to ~/.cargo/bin)
+    if ssh "$host" "cd $remote_dir && source \$HOME/.cargo/env && cargo install --path ."; then
+        log_success "[$host] Build and installation completed successfully"
     else
-        log_error "[$host] Build failed"
+        log_error "[$host] Build and installation failed"
         return 1
     fi
-    
-    # Install the binary
-    log_info "[$host] Installing binary..."
-    ssh "$host" "cd $remote_dir && source \$HOME/.cargo/env && cargo install --path ."
 }
 
-# Function to setup systemd service
+# Function to setup systemd user service
 setup_service() {
     local host=$1
     local user=$(echo $host | cut -d'@' -f1)
     local remote_dir="/home/$user/system-info-service"
+    local config_file="/home/$user/.config/system-info-service/Rocket.toml"
     
-    log_info "[$host] Setting up systemd service..."
+    log_info "[$host] Setting up systemd user service..."
     
-    # Copy service file to systemd directory
-    ssh "$host" "sudo cp $remote_dir/system-info.service /etc/systemd/system/"
+    # Create user systemd directory if it doesn't exist
+    ssh "$host" "mkdir -p ~/.config/systemd/user"
     
-    # Reload systemd
-    ssh "$host" "sudo systemctl daemon-reload"
+    # Create a temporary service file with the correct paths
+    # Note: User= directive must be REMOVED for user services (they run as the owning user)
+    log_info "[$host] Customizing service file for user: $user"
+    ssh "$host" "sed -e '/^User=/d' \
+                     -e 's|ExecStart=.*|ExecStart=/home/$user/.cargo/bin/system_info_service|' \
+                     $remote_dir/system-info.service > /tmp/system-info.service.tmp"
+    
+    # Add ROCKET_CONFIG environment variable if not already present
+    if ! ssh "$host" "grep -q 'ROCKET_CONFIG' /tmp/system-info.service.tmp" 2>/dev/null; then
+        log_info "[$host] Adding ROCKET_CONFIG environment variable..."
+        # Add after the existing Environment line
+        ssh "$host" "sed -i '/Environment=\"ROCKET_PROFILE=production\"/a Environment=\"ROCKET_CONFIG=$config_file\"' /tmp/system-info.service.tmp"
+    fi
+    
+    # Copy customized service file to user systemd directory
+    ssh "$host" "mv /tmp/system-info.service.tmp ~/.config/systemd/user/$SERVICE_NAME"
+    
+    # Reload systemd user daemon
+    ssh "$host" "systemctl --user daemon-reload"
     
     # Enable service
-    ssh "$host" "sudo systemctl enable $SERVICE_NAME"
+    ssh "$host" "systemctl --user enable $SERVICE_NAME"
     
-    log_success "[$host] Service configured"
+    log_success "[$host] User service configured for user: $user"
 }
 
 # Function to restart the service
 restart_service() {
     local host=$1
     
-    log_info "[$host] Restarting service..."
+    log_info "[$host] Restarting user service..."
     
     # Restart the service
-    ssh "$host" "sudo systemctl restart $SERVICE_NAME"
+    ssh "$host" "systemctl --user restart $SERVICE_NAME"
     
     # Wait a moment for service to start
     sleep 2
     
     # Check service status
-    if ssh "$host" "sudo systemctl is-active --quiet $SERVICE_NAME"; then
+    if ssh "$host" "systemctl --user is-active --quiet $SERVICE_NAME"; then
         log_success "[$host] Service is running"
         
         # Show brief service status
-        ssh "$host" "sudo systemctl status $SERVICE_NAME --no-pager -l" | head -n 15
+        ssh "$host" "systemctl --user status $SERVICE_NAME --no-pager -l" | head -n 15
     else
         log_error "[$host] Service failed to start"
         log_error "[$host] Recent logs:"
-        ssh "$host" "sudo journalctl -u $SERVICE_NAME -n 30 --no-pager"
+        ssh "$host" "journalctl --user -u $SERVICE_NAME -n 30 --no-pager"
         return 1
     fi
 }
@@ -263,6 +309,9 @@ deploy_to_host() {
         log_warning "[$host] Make sure SSH key authentication is set up"
         return 1
     fi
+    
+    # Check if lingering is enabled (warning only, don't fail)
+    check_lingering "$host"
     
     # Ensure dependencies are installed
     ensure_dependencies "$host" || return 1
@@ -293,7 +342,7 @@ deploy_to_host() {
 
 # Main deployment logic
 main() {
-    log_info "System Info Service Deployment Script"
+    log_info "System Info Service Deployment Script (User Services)"
     log_info "Deployment method: $DEPLOY_METHOD"
     log_info "Hosts file: $HOSTS_FILE"
     echo ""
@@ -323,9 +372,9 @@ main() {
     
     for host in "${hosts[@]}"; do
         if deploy_to_host "$host"; then
-            ((success_count++))
+            ((success_count++)) || true
         else
-            ((fail_count++))
+            ((fail_count++)) || true
         fi
     done
     

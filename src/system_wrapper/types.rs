@@ -98,6 +98,6 @@ pub struct SystemAllResponse {
     pub networks: Option<NetworkResult>,
     #[serde(rename = "netStats")]
     pub net_stats: Option<NetworkStatsResults>,
-    #[serde(rename = "cpuAverage")]
-    pub cpu_average: Option<CPULoad>,
+    // #[serde(rename = "cpuAverage")]
+    // pub cpu_average: Option<CPULoad>,
 }
